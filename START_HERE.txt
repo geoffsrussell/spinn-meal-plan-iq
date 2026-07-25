@@ -1,0 +1,21 @@
+SPINN MEAL PLAN IQ - CLEAN REBUILD
+
+IMPORTANT: Do not upload these files through GitHub's web Upload Files page.
+That page flattened the folders before.
+
+Use GitHub Desktop:
+1. Install GitHub Desktop from https://desktop.github.com
+2. In GitHub Desktop choose File > Clone repository.
+3. Select geoffsrussell/spinn-meal-plan-iq and clone it.
+4. Open the cloned repository folder.
+5. Delete the old files in the cloned folder, but keep the hidden .git folder.
+6. Copy EVERYTHING inside this SPINN_Meal_Plan_IQ_REBUILT folder into the cloned folder.
+7. In GitHub Desktop enter summary: Clean project rebuild
+8. Click Commit to main, then Push origin.
+9. Netlify will automatically redeploy.
+
+Netlify settings:
+Build command: npm run build
+Publish directory: public
+Functions directory: netlify/functions
+Base directory: leave blank
