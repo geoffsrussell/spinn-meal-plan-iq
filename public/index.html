@@ -54,14 +54,14 @@ main{max-width:1180px;margin:auto;padding:24px 20px 90px}.view{display:none}.vie
 <section id="shopping" class="view"><div class="summary"><div class="metric"><b id="shopCount">0</b><span>items</span></div><div class="metric"><b id="shopChecked">0</b><span>checked</span></div><div class="metric"><b id="planMeals">0</b><span>meals</span></div><div class="metric"><b id="planServings">0</b><span>servings</span></div></div><div class="actions"><button id="copyList" class="btn">Copy text</button><button id="exportList" class="btn">Export JSON</button><button id="clearList" class="btn">Clear</button></div><div id="shoppingList"></div></section>
 <section id="pantry" class="view"><div class="notice">Add pantry staples. Matching items will be excluded from newly generated shopping lists.</div><div class="toolbar"><input id="pantryName" placeholder="Ingredient, e.g. olive oil"><input id="pantryQty" placeholder="Quantity"><button id="addPantry" class="btn primary">Add</button></div><div id="pantryList"></div></section>
 <section id="integration" class="view">
-<div class="section-head"><div><span class="phase-badge">FRY'S INTEGRATION · PHASE 1</span><h2 style="margin-top:10px">Turn your shopping list into a cart-ready list</h2><p>This first build creates the store-selection and product-matching workflow. Live Fry's data activates after Kroger developer credentials are added to the hosted version.</p></div></div>
-<div class="progressbar"><span></span></div><p class="small">Phase 1 of 4 · Product preview and matching</p>
+<div class="section-head"><div><span class="phase-badge">LIVE KROGER + FRY'S</span><h2 style="margin-top:10px">Build a real Fry's cart from your meal plan</h2><p>Choose a nearby store, match each ingredient to a live Kroger product, connect your account, and send the selected items to your cart.</p></div></div>
+<div class="progressbar"><span style="width:100%"></span></div><p class="small">Live store search · Live product matching · Kroger OAuth · Cart creation</p>
 <div class="integration-grid">
-  <div class="step-card"><div class="step-num">1</div><h3>Choose your Fry's store</h3><div class="toolbar" style="grid-template-columns:1fr auto"><input id="frysZip" inputmode="numeric" maxlength="5" placeholder="ZIP code, e.g. 85249"><button id="findStores" class="btn primary">Find stores</button></div><div id="storeResults"><div class="empty">Enter a ZIP code to preview nearby Fry's locations.</div></div></div>
-  <div class="step-card"><div class="step-num">2</div><h3>Connection status</h3><p><span class="status-dot warn"></span><b>Demo mode</b></p><p class="small">The standalone file cannot safely store Kroger credentials. The included hosted-app scaffold contains secure server routes for OAuth, locations, products, and cart creation.</p><div class="code-note">KROGER_CLIENT_ID=...<br>KROGER_CLIENT_SECRET=...<br>KROGER_REDIRECT_URI=https://your-domain.com/api/kroger/callback</div></div>
+  <div class="step-card"><div class="step-num">1</div><h3>Choose your Fry's store</h3><div class="toolbar" style="grid-template-columns:1fr auto"><input id="frysZip" inputmode="numeric" maxlength="5" placeholder="ZIP code, e.g. 85249"><button id="findStores" class="btn primary">Find stores</button></div><div id="storeResults"><div class="empty">Enter a ZIP code to search live Kroger/Fry's locations.</div></div></div>
+  <div class="step-card"><div class="step-num">2</div><h3>Connect your Fry's account</h3><div id="connectionStatus"><p><span class="status-dot warn"></span><b>Checking connection…</b></p></div><div class="actions"><button id="connectKroger" class="btn primary">Connect Fry's account</button><button id="disconnectKroger" class="btn" style="display:none">Disconnect</button></div><p class="small">Kroger handles the sign-in. Your password is never shared with this app.</p></div>
 </div>
-<div class="step-card" style="margin-top:16px"><div class="step-num">3</div><div class="section-head"><div><h3>Match shopping items to Fry's products</h3><p>Generate a shopping list first, then preview recommended products.</p></div><button id="matchProducts" class="btn primary">Match products</button></div><div id="matchSummary" class="notice">No products matched yet.</div><div id="productMatches"></div></div>
-<div class="step-card" style="margin-top:16px"><div class="step-num">4</div><h3>Export the integration payload</h3><p class="small">This file contains your selected store, canonical ingredients, quantities, and chosen product IDs. It is the bridge to the hosted Kroger API version.</p><button id="exportCatalog" class="btn primary">Export Fry's-ready payload</button></div>
+<div class="step-card" style="margin-top:16px"><div class="step-num">3</div><div class="section-head"><div><h3>Match shopping items to live products</h3><p>Generate a shopping list first. The app searches the selected store for each ingredient.</p></div><button id="matchProducts" class="btn primary">Match live products</button></div><div id="matchSummary" class="notice">No products matched yet.</div><div id="productMatches"></div></div>
+<div class="step-card" style="margin-top:16px"><div class="step-num">4</div><div class="section-head"><div><h3>Send selected products to Fry's</h3><p>Review product choices and quantities before adding them to your cart.</p></div><button id="addToKrogerCart" class="btn primary">Add to Fry's cart</button></div><div id="cartStatus" class="small">Connect your account and match products first.</div><div class="actions"><button id="exportCatalog" class="btn">Export product selections</button></div></div>
 </section>
 <section id="detail" class="view"></section>
 </main><div id="toast" class="toast" aria-live="polite"></div>
@@ -89,34 +89,91 @@ function renderShopping(){$('#shopCount').textContent=shopping.length;$('#shopCh
 function renderPantry(){$('#pantryList').innerHTML=pantry.length?pantry.map((x,i)=>`<div class="pantry-item"><span>✓</span><b>${esc(x.name)}</b><span>${esc(x.quantity||'')}</span><button class="btn pantryRemove" data-i="${i}">Remove</button></div>`).join(''):'<div class="empty">No pantry staples yet.</div>';$$('.pantryRemove').forEach(e=>e.addEventListener('click',()=>{pantry.splice(Number(e.dataset.i),1);save();renderPantry()}))}
 $('#addPantry').addEventListener('click',()=>{const name=$('#pantryName').value.trim();if(!name)return;pantry.push({name,quantity:$('#pantryQty').value.trim()});$('#pantryName').value='';$('#pantryQty').value='';save();renderPantry();renderHome();toast('Added to pantry')});
 function download(name,obj){const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500)}
-$('#exportList').addEventListener('click',()=>download('shopping-list.json',{generatedAt:new Date().toISOString(),items:shopping}));$('#clearList').addEventListener('click',()=>{shopping=[];save();renderShopping()});$('#copyList').addEventListener('click',async()=>{const text=shopping.map(x=>`${x.quantity??''} ${x.unit||''} ${x.name}`.trim()).join('\n');try{await navigator.clipboard.writeText(text);toast('Copied')}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied')}});$('#exportCatalog').addEventListener('click',()=>download('frys-integration-payload.json',{schemaVersion:'1.1',mode:'demo',retailer:'Kroger/Frys',selectedStore,mealPlan:plan,shoppingItems:shopping.map(x=>({canonicalName:x.name,quantity:x.quantity,unit:x.unit,selectedProductName:productSelections[x.name]||demoProductsFor(x.name)[0],retailerProductId:null}))}));
+$('#exportList').addEventListener('click',()=>download('shopping-list.json',{generatedAt:new Date().toISOString(),items:shopping}));$('#clearList').addEventListener('click',()=>{shopping=[];save();renderShopping()});$('#copyList').addEventListener('click',async()=>{const text=shopping.map(x=>`${x.quantity??''} ${x.unit||''} ${x.name}`.trim()).join('\n');try{await navigator.clipboard.writeText(text);toast('Copied')}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied')}});$('#exportCatalog').addEventListener('click',()=>download('frys-live-product-selections.json',{schemaVersion:'2.0',mode:'live',retailer:'Kroger/Frys',selectedStore,mealPlan:plan,shoppingItems:shopping.map(x=>{const p=productSelections[x.name];return {canonicalName:x.name,quantity:x.quantity,unit:x.unit,selectedProductName:p?.description||null,retailerProductId:p?.productId||null,upc:p?.upc||null,regularPrice:p?.regularPrice??null,promoPrice:p?.promoPrice??null}})}));
 
-const demoStores=[
- {id:'66000542',name:"Fry's Marketplace",address:'985 E Riggs Rd, Chandler, AZ 85249',distance:'2.4 mi'},
- {id:'66000619',name:"Fry's Food and Drug",address:'2929 E Ocotillo Rd, Chandler, AZ 85249',distance:'4.8 mi'},
- {id:'66000173',name:"Fry's Marketplace",address:'2929 E Pecos Rd, Gilbert, AZ 85295',distance:'7.1 mi'}
-];
-const productLibrary={
- 'chicken breasts':['Kroger Boneless Skinless Chicken Breasts','Simple Truth Natural Chicken Breast','Fry’s Fresh Chicken Breast Value Pack'],
- 'chicken thighs':['Kroger Boneless Skinless Chicken Thighs','Simple Truth Chicken Thighs'],
- 'yellow onion':['Fresh Yellow Onion','Kroger Diced Yellow Onion'],
- 'black beans':['Kroger Black Beans 15 oz','Simple Truth Organic Black Beans 15 oz'],
- 'diced tomatoes':['Kroger Diced Tomatoes 14.5 oz','Simple Truth Organic Diced Tomatoes'],
- 'chicken broth':['Kroger Chicken Broth 32 fl oz','Simple Truth Organic Chicken Broth'],
- 'ground beef':['Kroger 85% Lean Ground Beef','Simple Truth Grass Fed Ground Beef'],
- 'pasta':['Kroger Pasta','Barilla Pasta'],
- 'rice':['Kroger Long Grain White Rice','Mahatma Jasmine Rice'],
- 'cheese':['Kroger Shredded Cheese','Tillamook Shredded Cheese']
-};
 let selectedStore=JSON.parse(localStorage.getItem('selectedFrysStore')||'null');
 let productSelections=JSON.parse(localStorage.getItem('frysProductSelections')||'{}');
-function storeHtml(s){return `<button class="store-card ${selectedStore&&selectedStore.id===s.id?'selected':''}" data-store="${s.id}" style="width:100%;text-align:left"><b>${esc(s.name)}</b><div class="small">${esc(s.address)} · ${esc(s.distance)}</div></button>`}
-function renderStores(rows){$('#storeResults').innerHTML=rows.map(storeHtml).join('');$$('[data-store]').forEach(b=>b.addEventListener('click',()=>{selectedStore=demoStores.find(s=>s.id===b.dataset.store);localStorage.setItem('selectedFrysStore',JSON.stringify(selectedStore));renderStores(rows);toast('Fry’s store selected')}))}
-$('#findStores').addEventListener('click',()=>{const zip=$('#frysZip').value.trim();if(!/^\d{5}$/.test(zip)){toast('Enter a 5-digit ZIP code');return}renderStores(demoStores)});
-function demoProductsFor(name){const n=name.toLowerCase();for(const [key,items] of Object.entries(productLibrary))if(n.includes(key)||key.includes(n))return items;return [`Kroger ${name}`.replace(/\b\w/g,c=>c.toUpperCase()),`Simple Truth ${name}`.replace(/\b\w/g,c=>c.toUpperCase())]}
-function renderMatches(){if(!shopping.length){$('#productMatches').innerHTML='<div class="empty">Generate a shopping list first.</div>';$('#matchSummary').textContent='No shopping items available.';return}$('#matchSummary').innerHTML=`<b>${shopping.length} ingredients ready</b> · Demo recommendations shown for ${selectedStore?esc(selectedStore.name):'your selected store'}.`;$('#productMatches').innerHTML=shopping.map((x,i)=>{const opts=demoProductsFor(x.name);const selected=productSelections[x.name]||opts[0];return `<div class="match-row"><div><b>${esc(x.name)}</b><div class="small">Need: ${x.quantity??''} ${esc(x.unit||'')}</div><select class="product-choice" data-match="${i}">${opts.map((p,j)=>`<option value="${esc(p)}" ${p===selected?'selected':''}>${esc(p)}${j===0?' · Recommended':''}</option>`).join('')}</select></div><span class="phase-badge">Matched</span></div>`}).join('');$$('[data-match]').forEach(sel=>sel.addEventListener('change',()=>{const item=shopping[Number(sel.dataset.match)];productSelections[item.name]=sel.value;localStorage.setItem('frysProductSelections',JSON.stringify(productSelections))}))}
-$('#matchProducts').addEventListener('click',()=>{if(!selectedStore){toast('Choose a Fry’s store first');return}renderMatches();toast('Products matched in demo mode')});
+let krogerConnected=false;
+let liveStores=[];
 
+async function apiJson(url,options={}){
+  const response=await fetch(url,{credentials:'include',...options,headers:{'content-type':'application/json',...(options.headers||{})}});
+  let data={};
+  try{data=await response.json()}catch(e){}
+  if(!response.ok)throw new Error(data.error||`Request failed (${response.status})`);
+  return data;
+}
+function setBusy(button,busy,label){if(!button)return;button.disabled=busy;if(label)button.dataset.original=button.textContent;button.textContent=busy?'Working…':(button.dataset.original||button.textContent)}
+function productPrice(p){const value=p.promoPrice??p.regularPrice;return value==null?'Price unavailable':`$${Number(value).toFixed(2)}${p.promoPrice!=null?' sale':''}`}
+function productLabel(p){return [p.brand,p.description,p.size,productPrice(p)].filter(Boolean).join(' · ')}
+function storeHtml(s){return `<button class="store-card ${selectedStore&&selectedStore.id===s.id?'selected':''}" data-store="${esc(s.id)}" style="width:100%;text-align:left"><b>${esc(s.name)}</b><div class="small">${esc(s.address||'Address unavailable')}</div>${s.chain?`<div class="small">${esc(s.chain)}</div>`:''}</button>`}
+function renderStores(rows){liveStores=rows;$('#storeResults').innerHTML=rows.length?rows.map(storeHtml).join(''):'<div class="empty">No nearby stores were returned.</div>';$$('[data-store]').forEach(b=>b.addEventListener('click',()=>{selectedStore=liveStores.find(s=>s.id===b.dataset.store);localStorage.setItem('selectedFrysStore',JSON.stringify(selectedStore));renderStores(rows);toast('Fry’s store selected')}))}
+
+async function checkKrogerStatus(){
+  const box=$('#connectionStatus'),connect=$('#connectKroger'),disconnect=$('#disconnectKroger');
+  try{
+    const data=await apiJson('/api/kroger/auth/status');
+    krogerConnected=!!data.connected;
+    box.innerHTML=krogerConnected?'<p><span class="status-dot good"></span><b>Connected to Fry’s/Kroger</b></p><p class="small">Your account is authorized for cart creation.</p>':'<p><span class="status-dot warn"></span><b>Not connected</b></p><p class="small">Connect your account when you are ready to send products to your cart.</p>';
+    connect.style.display=krogerConnected?'none':'';disconnect.style.display=krogerConnected?'':'none';
+  }catch(error){
+    krogerConnected=false;box.innerHTML=`<p><span class="status-dot warn"></span><b>Connection check failed</b></p><p class="small">${esc(error.message)}</p>`;
+  }
+}
+$('#connectKroger').addEventListener('click',()=>{window.location.href='/api/kroger/auth/start'});
+$('#disconnectKroger').addEventListener('click',async()=>{try{await apiJson('/api/kroger/auth/logout');await checkKrogerStatus();toast('Kroger account disconnected')}catch(error){toast(error.message)}});
+
+$('#findStores').addEventListener('click',async()=>{
+  const zip=$('#frysZip').value.trim(),button=$('#findStores');
+  if(!/^\d{5}$/.test(zip)){toast('Enter a 5-digit ZIP code');return}
+  setBusy(button,true);
+  $('#storeResults').innerHTML='<div class="empty">Searching live Fry’s locations…</div>';
+  try{const data=await apiJson(`/api/kroger/locations?zip=${encodeURIComponent(zip)}`);renderStores(data.locations||[])}catch(error){$('#storeResults').innerHTML=`<div class="notice">${esc(error.message)}</div>`}finally{setBusy(button,false)}
+});
+
+async function searchProductsForItem(item){
+  const data=await apiJson(`/api/kroger/products?term=${encodeURIComponent(item.name)}&locationId=${encodeURIComponent(selectedStore.id)}`);
+  return data.products||[];
+}
+function renderLiveMatches(results){
+  if(!results.length){$('#productMatches').innerHTML='<div class="empty">No shopping items available.</div>';return}
+  $('#productMatches').innerHTML=results.map((row,i)=>{
+    const item=row.item,products=row.products,current=productSelections[item.name];
+    if(!products.length)return `<div class="match-row"><div><b>${esc(item.name)}</b><div class="small">No matching product returned. Try searching for a simpler ingredient name.</div></div><span class="phase-badge">Needs review</span></div>`;
+    const selected=(current&&products.find(p=>p.upc===current.upc))||products[0];productSelections[item.name]=selected;
+    return `<div class="match-row"><div><b>${esc(item.name)}</b><div class="small">Need: ${item.quantity??''} ${esc(item.unit||'')}</div><select class="product-choice" data-live-match="${i}">${products.map(p=>`<option value="${esc(p.upc)}" ${p.upc===selected.upc?'selected':''}>${esc(productLabel(p))}</option>`).join('')}</select><div class="small" style="margin-top:6px">${esc(selected.aisle||'Aisle unavailable')}</div></div><span class="phase-badge">Live match</span></div>`
+  }).join('');
+  results.forEach((row,i)=>{const select=document.querySelector(`[data-live-match="${i}"]`);if(select)select.addEventListener('change',()=>{productSelections[row.item.name]=row.products.find(p=>p.upc===select.value);localStorage.setItem('frysProductSelections',JSON.stringify(productSelections));renderLiveMatches(results)})});
+  localStorage.setItem('frysProductSelections',JSON.stringify(productSelections));
+}
+$('#matchProducts').addEventListener('click',async()=>{
+  if(!selectedStore){toast('Choose a Fry’s store first');return}
+  if(!shopping.length){toast('Generate a shopping list first');return}
+  const button=$('#matchProducts');setBusy(button,true);$('#matchSummary').innerHTML=`Searching ${shopping.length} ingredients at ${esc(selectedStore.name)}…`;$('#productMatches').innerHTML='';
+  const results=[];
+  for(let i=0;i<shopping.length;i++){
+    const item=shopping[i];$('#matchSummary').innerHTML=`Matching ${i+1} of ${shopping.length}: <b>${esc(item.name)}</b>`;
+    try{results.push({item,products:await searchProductsForItem(item)})}catch(error){results.push({item,products:[],error:error.message})}
+  }
+  renderLiveMatches(results);$('#matchSummary').innerHTML=`<b>${results.filter(r=>r.products.length).length} of ${results.length} ingredients matched</b> at ${esc(selectedStore.name)}.`;setBusy(button,false);toast('Live product matching complete')
+});
+
+$('#addToKrogerCart').addEventListener('click',async()=>{
+  if(!krogerConnected){toast('Connect your Fry’s account first');return}
+  const chosen=shopping.map(x=>({item:x,product:productSelections[x.name]})).filter(x=>x.product?.upc);
+  if(!chosen.length){toast('Match products first');return}
+  const button=$('#addToKrogerCart');setBusy(button,true);$('#cartStatus').textContent='Adding selected products to your Fry’s cart…';
+  try{
+    const items=chosen.map(({item,product})=>({upc:product.upc,quantity:Math.max(1,Math.ceil(Number(item.quantity)||1)),modality:'PICKUP'}));
+    const data=await apiJson('/api/kroger/cart',{method:'PUT',body:JSON.stringify({items})});
+    $('#cartStatus').innerHTML=`<b>${data.added||items.length} products added.</b> Open the Fry’s app or Kroger website to review availability, substitutions, and checkout.`;toast('Products added to Fry’s cart')
+  }catch(error){$('#cartStatus').textContent=error.message;toast(error.message)}finally{setBusy(button,false)}
+});
+
+const krogerQuery=new URLSearchParams(window.location.search);
+if(krogerQuery.get('kroger')==='connected'){setTimeout(()=>toast('Fry’s account connected'),300);history.replaceState({},'',window.location.pathname)}
+if(krogerQuery.get('kroger')==='error'){setTimeout(()=>toast(`Kroger connection failed: ${krogerQuery.get('reason')||'unknown error'}`),300);history.replaceState({},'',window.location.pathname)}
+checkKrogerStatus();
 $('#heroPlan').addEventListener('click',()=>showView('planner'));
 $('#homePlanBtn').addEventListener('click',()=>showView('planner'));
 $('#homeBrowseBtn').addEventListener('click',()=>showView('recipes'));

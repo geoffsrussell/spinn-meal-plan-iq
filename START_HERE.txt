@@ -1,21 +1,22 @@
-SPINN MEAL PLAN IQ - CLEAN REBUILD
+SPINN MEAL PLAN IQ - LIVE KROGER BUILD
 
-IMPORTANT: Do not upload these files through GitHub's web Upload Files page.
-That page flattened the folders before.
+1. Copy the CONTENTS of this folder into your local GitHub Desktop repository folder.
+2. In GitHub Desktop, commit with: Live Kroger integration
+3. Click Push origin.
+4. Netlify will deploy automatically.
+5. Keep your existing Netlify environment variables. Do not delete or rename them:
+   KROGER_API_BASE
+   KROGER_CLIENT_ID
+   KROGER_CLIENT_SECRET
+   KROGER_REDIRECT_URI
+   SESSION_SECRET
+6. After Netlify says Published, open https://freezeriq.netlify.app and hard refresh (Ctrl+F5).
+7. Open Grocery Integration and test in this order:
+   - Find stores
+   - Select store
+   - Generate shopping list
+   - Match live products
+   - Connect Fry's account
+   - Add to Fry's cart
 
-Use GitHub Desktop:
-1. Install GitHub Desktop from https://desktop.github.com
-2. In GitHub Desktop choose File > Clone repository.
-3. Select geoffsrussell/spinn-meal-plan-iq and clone it.
-4. Open the cloned repository folder.
-5. Delete the old files in the cloned folder, but keep the hidden .git folder.
-6. Copy EVERYTHING inside this SPINN_Meal_Plan_IQ_REBUILT folder into the cloned folder.
-7. In GitHub Desktop enter summary: Clean project rebuild
-8. Click Commit to main, then Push origin.
-9. Netlify will automatically redeploy.
-
-Netlify settings:
-Build command: npm run build
-Publish directory: public
-Functions directory: netlify/functions
-Base directory: leave blank
+The old hard-coded Demo Mode has been removed.

@@ -1,29 +1,25 @@
-# SPINN Meal Plan IQ
+# SPINN Meal Plan IQ - Live Kroger/Fry's Build
 
-Clean Netlify-ready build with the required folder structure preserved.
+This build removes the hard-coded demo grocery workflow and connects the UI to Netlify Functions backed by Kroger's APIs.
 
-## Required structure
+## Live routes
 
-- `public/index.html` — the meal planner application
-- `netlify/functions/` — Kroger/Fry's serverless integration
-- `netlify.toml` — redirects and deployment configuration
-- `package.json` — build verification
+- `/api/kroger/locations`
+- `/api/kroger/products`
+- `/api/kroger/auth/start`
+- `/api/kroger/auth/callback`
+- `/api/kroger/auth/status`
+- `/api/kroger/auth/logout`
+- `/api/kroger/cart`
 
-## Netlify settings
+## Netlify configuration
 
 - Build command: `npm run build`
 - Publish directory: `public`
 - Functions directory: `netlify/functions`
-- Base directory: blank
 
-## Environment variables
+The Netlify environment variables must remain configured. The Kroger client secret is intentionally not committed to GitHub; Netlify injects it securely into the server functions at runtime.
 
-Add these in Netlify under Project configuration → Environment variables:
+## Deployment
 
-- `KROGER_CLIENT_ID`
-- `KROGER_CLIENT_SECRET`
-- `KROGER_API_BASE` = `https://api.kroger.com/v1`
-- `KROGER_REDIRECT_URI` = `https://freezeriq.netlify.app/api/kroger/auth/callback`
-- `SESSION_SECRET` = any long random phrase
-
-Do not put these values directly in GitHub.
+Copy all files and folders into the root of the local `spinn-meal-plan-iq` repository, commit, and push with GitHub Desktop. Netlify will automatically redeploy.
