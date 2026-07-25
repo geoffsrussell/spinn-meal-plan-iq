@@ -1,3 +1,8 @@
-import { access } from 'node:fs/promises';
-await access('public/index.html');
-console.log('Static app and Netlify Functions are ready.');
+{
+  "name": "spinn-meal-plan-iq",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"Build complete\""
+  }
+}
