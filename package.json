@@ -1,0 +1,9 @@
+{
+  "name": "spinn-meal-plan-iq",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SPINN Meal Plan IQ with Kroger/Fry's certification API integration",
+  "scripts": {
+    "build": "node scripts/verify-build.mjs"
+  }
+}
